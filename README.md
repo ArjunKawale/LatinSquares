@@ -16,7 +16,7 @@ This repository contains a web-based practice tool for the Latin Squares subtest
 Because exact exam generation algorithms aren't public, this tool uses specific constraints to mimic the cognitive load of the actual test:
 
 * **Visible Clues:** Every generated grid leaves between 9 and 15 boxes pre-filled to ensure a solvable but challenging board state.
-* **Difficulty Scaling:** The difficulty isn't just about how many empty squares there are. It is scaled based on "deduction depth"—the number of logical steps required to isolate the answer for the target square.
+* **Difficulty Scaling:** The difficulty isn't just about how many empty squares there are. It is scaled based on "deduction depth" i.e the number of logical steps required to isolate the answer for the target square.
   * **Easy:** 1-2 logical steps (direct elimination).
   * **Medium:** 2-3 logical steps.
   * **Hard:** 3-5+ logical steps.
