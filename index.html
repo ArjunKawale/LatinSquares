@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5x5 Latin Square Puzzle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            touch-action: manipulation;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            background-color: #374151; /* Dark border color */
+            border: 4px solid #374151;
+            border-radius: 0.5rem;
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .cell {
+            background-color: #ffffff;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .cell.given {
+            color: #4b5563;
+        }
+
+        .cell.target {
+            background-color: #fef08a; /* Yellow-200 */
+            color: #b45309; /* Amber-700 */
+            font-size: 2rem;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+            animation: pulse-soft 2s infinite;
+        }
+
+        .cell.target.correct {
+            background-color: #86efac; /* Green-300 */
+            color: #166534; /* Green-800 */
+            animation: none;
+        }
+
+        .cell.target.wrong {
+            background-color: #fca5a5; /* Red-300 */
+            color: #991b1b; /* Red-800 */
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+
+        .btn-mcq {
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+        }
+        .btn-mcq:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+        .btn-mcq:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 flex flex-col items-center text-center">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-2">5x5 Logic Puzzle</h1>
+        <p class="text-sm text-gray-600 mb-6">Each row and column must contain numbers 1-5 exactly once. Guess the number for the highlighted square <b>(?)</b>.</p>
+
+        <!-- Grid Container -->
+        <div id="grid" class="grid-container mb-8">
+            <!-- Cells will be injected here via JS -->
+        </div>
+
+        <!-- Feedback Area -->
+        <div id="feedback" class="h-8 mb-4 text-lg font-bold">
+            <!-- Feedback text appears here -->
+        </div>
+
+        <!-- MCQ Buttons -->
+        <div class="flex gap-2 w-full justify-center mb-6" id="mcq-buttons">
+            <button class="btn-mcq flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-3 rounded shadow-md border-b-4 border-blue-700" onclick="checkAnswer(1)">1</button>
+            <button class="btn-mcq flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-3 rounded shadow-md border-b-4 border-blue-700" onclick="checkAnswer(2)">2</button>
+            <button class="btn-mcq flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-3 rounded shadow-md border-b-4 border-blue-700" onclick="checkAnswer(3)">3</button>
+            <button class="btn-mcq flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-3 rounded shadow-md border-b-4 border-blue-700" onclick="checkAnswer(4)">4</button>
+            <button class="btn-mcq flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-3 rounded shadow-md border-b-4 border-blue-700" onclick="checkAnswer(5)">5</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2 w-full justify-center">
+            <button id="show-solution-btn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg transition-colors" onclick="revealSolution()">
+                Show Solution
+            </button>
+            <button id="next-btn" class="flex-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold py-3 px-4 rounded-lg hidden transition-colors" onclick="initGame()">
+                Play Next
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const SIZE = 5;
+        let solutionGrid = [];
+        let puzzleGrid = [];
+        let targetRow = -1;
+        let targetCol = -1;
+        let targetAnswer = -1;
+        let gameActive = true;
+
+        // ---------------------------------------------------------
+        // Core Logic: Validation
+        // ---------------------------------------------------------
+        function isValid(grid, r, c, val) {
+            for (let i = 0; i < SIZE; i++) {
+                // Check row
+                if (grid[r][i] === val) return false;
+                // Check column
+                if (grid[i][c] === val) return false;
+            }
+            return true;
+        }
+
+        // ---------------------------------------------------------
+        // Core Logic: Generator
+        // ---------------------------------------------------------
+        function generateFullGrid(grid) {
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (grid[r][c] === 0) {
+                        // Shuffle 1-5 to ensure random grids
+                        let nums = [1, 2, 3, 4, 5];
+                        nums.sort(() => Math.random() - 0.5);
+
+                        for (let n of nums) {
+                            if (isValid(grid, r, c, n)) {
+                                grid[r][c] = n;
+                                if (generateFullGrid(grid)) return true;
+                                grid[r][c] = 0; // Backtrack
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true; // Grid fully filled
+        }
+
+        // ---------------------------------------------------------
+        // Core Logic: Solver (Count Solutions)
+        // ---------------------------------------------------------
+        function solveCount(grid, countObj) {
+            if (countObj.count > 1) return; // Optimization: stop if more than 1 solution
+
+            let emptyCell = findEmpty(grid);
+            if (!emptyCell) {
+                countObj.count++;
+                return;
+            }
+
+            let r = emptyCell.r;
+            let c = emptyCell.c;
+
+            for (let n = 1; n <= SIZE; n++) {
+                if (isValid(grid, r, c, n)) {
+                    grid[r][c] = n;
+                    solveCount(grid, countObj);
+                    grid[r][c] = 0; // Backtrack
+                }
+            }
+        }
+
+        function findEmpty(grid) {
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (grid[r][c] === 0) return { r, c };
+                }
+            }
+            return null;
+        }
+
+        // ---------------------------------------------------------
+        // Core Logic: Puzzle Creation
+        // ---------------------------------------------------------
+        function createPuzzle() {
+            // 1. Initialize empty grids
+            solutionGrid = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+            puzzleGrid = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+
+            // 2. Generate a valid, full solution grid
+            generateFullGrid(solutionGrid);
+
+            // Copy to puzzleGrid
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    puzzleGrid[r][c] = solutionGrid[r][c];
+                }
+            }
+
+            // 3. Create a list of all cells and shuffle them
+            let cells = [];
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    cells.push({ r, c });
+                }
+            }
+            cells.sort(() => Math.random() - 0.5);
+
+            // 4. Try removing numbers one by one
+            let cellsRemoved = 0;
+            // For 5x5, we don't want to remove too many or it takes a specific solver pattern, 
+            // but we will try to remove as many as we can while keeping exactly 1 solution.
+            for (let i = 0; i < cells.length; i++) {
+                let r = cells[i].r;
+                let c = cells[i].c;
+                let temp = puzzleGrid[r][c];
+                
+                puzzleGrid[r][c] = 0; // Remove
+
+                let countObj = { count: 0 };
+                // Clone grid for solving to avoid side effects
+                let gridClone = puzzleGrid.map(row => [...row]); 
+                solveCount(gridClone, countObj);
+
+                if (countObj.count !== 1) {
+                    // Not unique anymore, put the number back
+                    puzzleGrid[r][c] = temp;
+                } else {
+                    cellsRemoved++;
+                }
+            }
+
+            // 5. Select ONE target square from the empty ones
+            let emptyCells = [];
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (puzzleGrid[r][c] === 0) {
+                        emptyCells.push({ r, c });
+                    }
+                }
+            }
+
+            // Pick a random empty cell for the target question
+            if (emptyCells.length > 0) {
+                let target = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                targetRow = target.r;
+                targetCol = target.c;
+                targetAnswer = solutionGrid[targetRow][targetCol];
+            } else {
+                // Failsafe (should theoretically never happen, but just in case)
+                targetRow = 0; targetCol = 0;
+                targetAnswer = solutionGrid[0][0];
+                puzzleGrid[0][0] = 0;
+            }
+        }
+
+        // ---------------------------------------------------------
+        // UI & Interaction
+        // ---------------------------------------------------------
+        function renderGrid() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.classList.add('cell');
+                    cellEl.id = `cell-${r}-${c}`;
+
+                    if (r === targetRow && c === targetCol) {
+                        cellEl.classList.add('target');
+                        cellEl.textContent = '?';
+                    } else if (puzzleGrid[r][c] !== 0) {
+                        cellEl.classList.add('given');
+                        cellEl.textContent = puzzleGrid[r][c];
+                    }
+
+                    gridEl.appendChild(cellEl);
+                }
+            }
+        }
+
+        function checkAnswer(val) {
+            if (!gameActive) return;
+
+            const targetCellEl = document.getElementById(`cell-${targetRow}-${targetCol}`);
+            const feedbackEl = document.getElementById('feedback');
+            const nextBtn = document.getElementById('next-btn');
+
+            if (val === targetAnswer) {
+                // Correct!
+                targetCellEl.textContent = val;
+                targetCellEl.classList.remove('wrong');
+                targetCellEl.classList.add('correct');
+                feedbackEl.innerHTML = '<span class="text-green-600">Awesome! Correct answer.</span>';
+                gameActive = false;
+                disableButtons();
+                nextBtn.classList.remove('hidden');
+            } else {
+                // Wrong
+                targetCellEl.classList.remove('wrong');
+                // Trigger reflow to restart animation
+                void targetCellEl.offsetWidth; 
+                targetCellEl.classList.add('wrong');
+                feedbackEl.innerHTML = `<span class="text-red-600">Oops! ${val} is not correct. Try again!</span>`;
+            }
+        }
+
+        function disableButtons() {
+            const buttons = document.querySelectorAll('.btn-mcq');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.classList.remove('hover:bg-blue-600', 'active:transform');
+            });
+        }
+
+        function enableButtons() {
+            const buttons = document.querySelectorAll('.btn-mcq');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.classList.add('hover:bg-blue-600');
+            });
+        }
+
+        function revealSolution() {
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    const cellEl = document.getElementById(`cell-${r}-${c}`);
+                    if (puzzleGrid[r][c] === 0) {
+                        cellEl.textContent = solutionGrid[r][c];
+                        if (r === targetRow && c === targetCol) {
+                            cellEl.classList.remove('target', 'wrong');
+                            cellEl.classList.add('correct');
+                        } else {
+                            // Highlight revealed empty cells slightly differently
+                            cellEl.style.color = '#059669'; 
+                        }
+                    }
+                }
+            }
+            gameActive = false;
+            disableButtons();
+            document.getElementById('show-solution-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+            
+            const feedbackEl = document.getElementById('feedback');
+            if (!feedbackEl.textContent.includes('Awesome')) {
+                feedbackEl.innerHTML = '<span class="text-blue-600">Solution revealed.</span>';
+            }
+        }
+
+        function initGame() {
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('show-solution-btn').classList.remove('hidden');
+            enableButtons();
+            gameActive = true;
+            createPuzzle();
+            renderGrid();
+        }
+
+        // Start the first game
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
