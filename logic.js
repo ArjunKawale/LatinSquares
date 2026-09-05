@@ -1,12 +1,45 @@
 const SIZE = 5;
+const ALPHABET = ['A', 'B', 'C', 'D', 'E'];
 let currentBoard = [];
 let solutionBoard = [];
 let targetCell = null;
 let gameActive = true;
+let currentDifficulty = 'easy';
 
 document.getElementById('new-game-btn').addEventListener('click', initGame);
 document.getElementById('show-solution-btn').addEventListener('click', showSolution);
-document.getElementById('difficulty').addEventListener('change', initGame);
+
+// Custom Dropdown Logic
+const selected = document.querySelector(".select-selected");
+const items = document.querySelector(".select-items");
+const options = items.querySelectorAll("div");
+
+selected.addEventListener("click", function(e) {
+    e.stopPropagation();
+    this.classList.toggle("select-arrow-active");
+    items.classList.toggle("select-hide");
+});
+
+options.forEach(option => {
+    option.addEventListener("click", function(e) {
+        e.stopPropagation();
+        selected.innerHTML = `${this.innerText} <span class="select-arrow"></span>`;
+        currentDifficulty = this.getAttribute("data-value");
+        
+        options.forEach(opt => opt.classList.remove("same-as-selected"));
+        this.classList.add("same-as-selected");
+        
+        selected.classList.remove("select-arrow-active");
+        items.classList.add("select-hide");
+        
+        initGame();
+    });
+});
+
+document.addEventListener("click", function() {
+    selected.classList.remove("select-arrow-active");
+    items.classList.add("select-hide");
+});
 
 function initGame() {
     gameActive = true;
@@ -14,8 +47,7 @@ function initGame() {
     msg.innerText = "Select an answer below";
     msg.style.color = "var(--text-color)";
     
-    let difficulty = document.getElementById('difficulty').value;
-    generatePuzzle(difficulty);
+    generatePuzzle(currentDifficulty);
     renderBoard();
     renderMCQ();
 }
@@ -110,7 +142,7 @@ function calculateDeductionDepths(board) {
 }
 
 function getPossibleNumbers(board, row, col) {
-    let possible = [1, 2, 3, 4, 5];
+    let possible = [...ALPHABET];
     for (let i = 0; i < SIZE; i++) {
         possible = possible.filter(n => n !== board[row][i] && n !== board[i][col]);
     }
@@ -121,7 +153,7 @@ function fillBoard(board) {
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
             if (board[r][c] === 0) {
-                let nums = [1, 2, 3, 4, 5].sort(() => Math.random() - 0.5);
+                let nums = [...ALPHABET].sort(() => Math.random() - 0.5);
                 for (let num of nums) {
                     if (isValid(board, r, c, num)) {
                         board[r][c] = num;
@@ -141,7 +173,7 @@ function countSolutions(board) {
         for (let c = 0; c < SIZE; c++) {
             if (board[r][c] === 0) {
                 let count = 0;
-                for (let num = 1; num <= 5; num++) {
+                for (let num of ALPHABET) {
                     if (isValid(board, r, c, num)) {
                         board[r][c] = num;
                         count += countSolutions(board);
@@ -189,11 +221,12 @@ function renderMCQ() {
     const mcq = document.getElementById('mcq-options');
     mcq.innerHTML = '';
     
-    for (let i = 1; i <= SIZE; i++) {
+    for (let i = 0; i < SIZE; i++) {
+        let val = ALPHABET[i];
         let btn = document.createElement('button');
         btn.classList.add('mcq-btn');
-        btn.innerText = i;
-        btn.onclick = (e) => submitAnswer(i, e.target);
+        btn.innerText = val;
+        btn.onclick = (e) => submitAnswer(val, e.target);
         mcq.appendChild(btn);
     }
 }
