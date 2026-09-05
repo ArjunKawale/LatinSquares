@@ -1,0 +1,109 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding-top: 40px;
+    background-color: #f4f4f9;
+}
+
+.container {
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.controls {
+    margin-bottom: 20px;
+}
+
+button, select {
+    padding: 8px 12px;
+    margin: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #e0e0e0;
+}
+
+.status {
+    margin-bottom: 15px;
+    font-weight: bold;
+    min-height: 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(5, 50px);
+    grid-template-rows: repeat(5, 50px);
+    gap: 2px;
+    background-color: #333;
+    border: 2px solid #333;
+    margin: 0 auto 25px auto;
+    width: fit-content;
+}
+
+.cell {
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.cell.given {
+    background-color: #f0f0f0;
+    color: #555;
+}
+
+.cell.target {
+    background-color: #ffeaa7;
+    color: #d63031;
+    border: 2px solid #d63031;
+}
+
+.cell.revealed-correct {
+    background-color: #55efc4;
+    color: #00b894;
+}
+
+.cell.revealed-solution {
+    color: #0984e3;
+    font-weight: normal;
+}
+
+.mcq-section {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.mcq-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    font-weight: bold;
+    background-color: #74b9ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.mcq-btn:hover {
+    background-color: #0984e3;
+}
+
+.mcq-btn:disabled {
+    background-color: #dfe6e9;
+    cursor: not-allowed;
+    color: #b2bec3;
+}

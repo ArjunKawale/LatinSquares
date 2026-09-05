@@ -1,0 +1,250 @@
+const SIZE = 5;
+let currentBoard = [];
+let solutionBoard = [];
+let targetCell = null;
+let gameActive = true;
+
+document.getElementById('new-game-btn').addEventListener('click', initGame);
+document.getElementById('show-solution-btn').addEventListener('click', showSolution);
+document.getElementById('difficulty').addEventListener('change', initGame);
+
+function initGame() {
+    gameActive = true;
+    document.getElementById('status-message').innerText = "Select an answer below for the highlighted cell (?)";
+    document.getElementById('status-message').style.color = "black";
+    
+    let difficulty = document.getElementById('difficulty').value;
+    generatePuzzle(difficulty);
+    renderBoard();
+    renderMCQ();
+}
+
+function generatePuzzle(difficulty) {
+    let validPuzzleFound = false;
+    
+    let targetClues, minDepth, maxDepth;
+
+    if (difficulty === 'random') {
+        // Randomly leave between 9 and 14 clues
+        targetClues = Math.floor(Math.random() * (14 - 9 + 1)) + 9; 
+        minDepth = 1;   // Allow 1-step direct elimination
+        maxDepth = 999; // Allow 5+ step deep chains
+    } else {
+        targetClues = difficulty === 'easy' ? 13 : (difficulty === 'medium' ? 11 : 9);
+        minDepth = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
+        maxDepth = difficulty === 'easy' ? 2 : (difficulty === 'medium' ? 3 : 999);
+    }
+
+    while (!validPuzzleFound) {
+        // 1. Generate full valid board
+        let board = Array.from({length: SIZE}, () => Array(SIZE).fill(0));
+        fillBoard(board);
+        solutionBoard = JSON.parse(JSON.stringify(board));
+
+        // 2. Remove cells to hit target clue count while maintaining uniqueness
+        let puzzle = JSON.parse(JSON.stringify(board));
+        let cells = [];
+        for (let r=0; r<SIZE; r++) for (let c=0; c<SIZE; c++) cells.push({r, c});
+        cells.sort(() => Math.random() - 0.5);
+
+        let clues = 25;
+        for (let cell of cells) {
+            if (clues <= targetClues) break;
+            let temp = puzzle[cell.r][cell.c];
+            puzzle[cell.r][cell.c] = 0;
+            
+            if (countSolutions(JSON.parse(JSON.stringify(puzzle))) === 1) {
+                clues--;
+            } else {
+                puzzle[cell.r][cell.c] = temp; // Put it back, removing it breaks uniqueness
+            }
+        }
+
+        // 3. Simulate Human Logic to grade empty cells
+        let depths = calculateDeductionDepths(JSON.parse(JSON.stringify(puzzle)));
+        
+        // 4. Find valid target cells matching the difficulty depth
+        let validTargets = [];
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                if (puzzle[r][c] === 0) {
+                    let depth = depths[`${r},${c}`] || 999; 
+                    if (depth >= minDepth && depth <= maxDepth) {
+                        validTargets.push({r, c});
+                    }
+                }
+            }
+        }
+
+        if (validTargets.length > 0) {
+            targetCell = validTargets[Math.floor(Math.random() * validTargets.length)];
+            currentBoard = puzzle;
+            validPuzzleFound = true;
+        }
+    }
+}
+// SIMULATE HUMAN LOGIC: How many passes to solve each cell?
+function calculateDeductionDepths(board) {
+    let depths = {};
+    let pass = 1;
+    let keepGoing = true;
+
+    while (keepGoing) {
+        keepGoing = false;
+        let solvedThisPass = [];
+
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                if (board[r][c] === 0) {
+                    let possible = getPossibleNumbers(board, r, c);
+                    if (possible.length === 1) {
+                        solvedThisPass.push({r, c, val: possible[0]});
+                        depths[`${r},${c}`] = pass;
+                    }
+                }
+            }
+        }
+
+        if (solvedThisPass.length > 0) {
+            keepGoing = true;
+            solvedThisPass.forEach(cell => board[cell.r][cell.c] = cell.val);
+            pass++;
+        }
+    }
+    return depths;
+}
+
+function getPossibleNumbers(board, row, col) {
+    let possible = [1, 2, 3, 4, 5];
+    for (let i = 0; i < SIZE; i++) {
+        possible = possible.filter(n => n !== board[row][i] && n !== board[i][col]);
+    }
+    return possible;
+}
+
+function fillBoard(board) {
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === 0) {
+                let nums = [1, 2, 3, 4, 5].sort(() => Math.random() - 0.5);
+                for (let num of nums) {
+                    if (isValid(board, r, c, num)) {
+                        board[r][c] = num;
+                        if (fillBoard(board)) return true;
+                        board[r][c] = 0;
+                    }
+                }
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function countSolutions(board) {
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === 0) {
+                let count = 0;
+                for (let num = 1; num <= 5; num++) {
+                    if (isValid(board, r, c, num)) {
+                        board[r][c] = num;
+                        count += countSolutions(board);
+                        board[r][c] = 0;
+                        if (count > 1) return count; // Stop early if multiple found
+                    }
+                }
+                return count;
+            }
+        }
+    }
+    return 1;
+}
+
+function isValid(board, row, col, num) {
+    for (let i = 0; i < SIZE; i++) {
+        if (board[row][i] === num || board[i][col] === num) return false;
+    }
+    return true;
+}
+
+function renderBoard() {
+    const grid = document.getElementById('puzzle-grid');
+    grid.innerHTML = '';
+    
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            let div = document.createElement('div');
+            div.classList.add('cell');
+            
+            if (r === targetCell.r && c === targetCell.c) {
+                div.classList.add('target');
+                div.innerText = '?';
+                div.id = 'target-element';
+            } else if (currentBoard[r][c] !== 0) {
+                div.classList.add('given');
+                div.innerText = currentBoard[r][c];
+            }
+            grid.appendChild(div);
+        }
+    }
+}
+
+function renderMCQ() {
+    const mcq = document.getElementById('mcq-options');
+    mcq.innerHTML = '';
+    
+    for (let i = 1; i <= SIZE; i++) {
+        let btn = document.createElement('button');
+        btn.classList.add('mcq-btn');
+        btn.innerText = i;
+        btn.onclick = () => submitAnswer(i);
+        mcq.appendChild(btn);
+    }
+}
+
+function submitAnswer(ans) {
+    if (!gameActive) return;
+    let correctAns = solutionBoard[targetCell.r][targetCell.c];
+    let msg = document.getElementById('status-message');
+    let targetElement = document.getElementById('target-element');
+
+    if (ans === correctAns) {
+        msg.innerText = "Correct! You successfully deduced the logic chain.";
+        msg.style.color = "green";
+        targetElement.innerText = ans;
+        targetElement.classList.add('revealed-correct');
+        gameActive = false;
+        disableMCQ();
+    } else {
+        msg.innerText = "Incorrect. Check your cross-references and try again!";
+        msg.style.color = "red";
+    }
+}
+
+function showSolution() {
+    gameActive = false;
+    disableMCQ();
+    let msg = document.getElementById('status-message');
+    msg.innerText = "Solution revealed.";
+    msg.style.color = "blue";
+    
+    let cells = document.getElementsByClassName('cell');
+    let index = 0;
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (currentBoard[r][c] === 0) {
+                cells[index].innerText = solutionBoard[r][c];
+                cells[index].classList.add('revealed-solution');
+            }
+            index++;
+        }
+    }
+}
+
+function disableMCQ() {
+    document.querySelectorAll('.mcq-btn').forEach(btn => btn.disabled = true);
+}
+
+// Start first game on load
+initGame();
