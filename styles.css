@@ -1,109 +1,172 @@
+:root {
+    --bg-color: #121213;
+    --text-color: #ffffff;
+    --cell-border: #3a3a3c;
+    --cell-empty-bg: #121213;
+    --cell-given-bg: #3a3a3c;
+    --color-correct: #538d4e;
+    --color-present: #b59f3b;
+    --color-incorrect: #e3342f;
+    --key-bg: #818384;
+    --key-hover: #565758;
+}
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
     display: flex;
     justify-content: center;
     padding-top: 40px;
-    background-color: #f4f4f9;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
 }
 
 .container {
     text-align: center;
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    width: 100%;
+    margin-bottom: 20px;
+    font-size: 28px;
 }
 
 .controls {
+    width: 100%;
     margin-bottom: 20px;
 }
 
-button, select {
-    padding: 8px 12px;
-    margin: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+.bottom-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 30px;
 }
 
-button:hover {
-    background-color: #e0e0e0;
+button, select {
+    padding: 12px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    border: none;
+    background-color: var(--key-bg);
+    color: var(--text-color);
+    border-radius: 0;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+select {
+    background-color: var(--cell-empty-bg);
+    border: 2px solid var(--cell-border);
+}
+
+button:hover, select:hover {
+    background-color: var(--key-hover);
 }
 
 .status {
     margin-bottom: 15px;
     font-weight: bold;
     min-height: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(5, 50px);
-    grid-template-rows: repeat(5, 50px);
-    gap: 2px;
-    background-color: #333;
-    border: 2px solid #333;
+    grid-template-columns: repeat(5, 60px);
+    grid-template-rows: repeat(5, 60px);
+    gap: 5px;
     margin: 0 auto 25px auto;
-    width: fit-content;
 }
 
 .cell {
-    background-color: white;
+    background-color: var(--cell-empty-bg);
+    border: 2px solid var(--cell-border);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 30px;
     font-weight: bold;
-    color: #333;
+    text-transform: uppercase;
 }
 
 .cell.given {
-    background-color: #f0f0f0;
-    color: #555;
+    background-color: var(--cell-given-bg);
+    border-color: var(--cell-given-bg);
 }
 
 .cell.target {
-    background-color: #ffeaa7;
-    color: #d63031;
-    border: 2px solid #d63031;
+    background-color: var(--cell-empty-bg);
+    color: var(--color-present);
+    border: 2px solid var(--color-present);
 }
 
 .cell.revealed-correct {
-    background-color: #55efc4;
-    color: #00b894;
+    background-color: var(--color-correct);
+    border-color: var(--color-correct);
+    color: var(--text-color);
 }
 
 .cell.revealed-solution {
-    color: #0984e3;
-    font-weight: normal;
+    color: var(--text-color);
+    background-color: var(--key-hover);
+    border-color: var(--key-hover);
+}
+
+.cell.revealed-target-solution {
+    border: 3px solid var(--color-present);
+    color: var(--color-present);
+    background-color: var(--cell-empty-bg);
 }
 
 .mcq-section {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
+    width: 100%;
 }
 
 .mcq-btn {
-    width: 50px;
-    height: 50px;
+    flex: 1;
+    height: 55px;
     font-size: 20px;
-    font-weight: bold;
-    background-color: #74b9ff;
-    color: white;
+    background-color: var(--key-bg);
+    color: var(--text-color);
     border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
+    border-radius: 0;
 }
 
 .mcq-btn:hover {
-    background-color: #0984e3;
+    background-color: var(--key-hover);
+}
+
+.mcq-btn.correct {
+    background-color: var(--color-correct);
+}
+
+.mcq-btn.correct:hover {
+    background-color: var(--color-correct);
+}
+
+.mcq-btn.incorrect {
+    background-color: var(--color-incorrect);
+}
+
+.mcq-btn.incorrect:hover {
+    background-color: var(--color-incorrect);
 }
 
 .mcq-btn:disabled {
-    background-color: #dfe6e9;
+    opacity: 0.5;
     cursor: not-allowed;
-    color: #b2bec3;
 }

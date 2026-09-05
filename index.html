@@ -1,30 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>5x5 Logic Puzzle</title>
+    <title>Latin Squares</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
     <div class="container">
-        <h1>5x5 Grid Assessor</h1>
-
-        <div class="controls">
-            <label for="difficulty">Difficulty (Deduction Depth): </label>
+        <h1>Latin Squares</h1>
+        
+        <div class="controls top-controls">
             <select id="difficulty">
-                <option value="easy">Easy (1-2 Steps)</option>
-                <option value="medium">Medium (2-3 Steps)</option>
-                <option value="hard">Hard (3-5+ Steps)</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
                 <option value="random">Random (Any Difficulty)</option>
             </select>
-            <button id="new-game-btn">Generate New Puzzle</button>
-            <button id="show-solution-btn">Show Solution</button>
         </div>
 
-        <div class="status" id="status-message">Select an answer below for the highlighted cell (?)</div>
+        <div class="status" id="status-message">Select an answer below</div>
 
         <div class="grid" id="puzzle-grid">
             <!-- JS generates grid cells here -->
@@ -33,8 +28,12 @@
         <div class="mcq-section" id="mcq-options">
             <!-- JS generates 5 buttons here -->
         </div>
+
+        <div class="controls bottom-controls">
+            <button id="new-game-btn">Generate New Puzzle</button>
+            <button id="show-solution-btn">Show Solution</button>
+        </div>
     </div>
     <script src="logic.js"></script>
 </body>
-
 </html>

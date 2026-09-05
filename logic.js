@@ -10,8 +10,9 @@ document.getElementById('difficulty').addEventListener('change', initGame);
 
 function initGame() {
     gameActive = true;
-    document.getElementById('status-message').innerText = "Select an answer below for the highlighted cell (?)";
-    document.getElementById('status-message').style.color = "black";
+    let msg = document.getElementById('status-message');
+    msg.innerText = "Select an answer below";
+    msg.style.color = "var(--text-color)";
     
     let difficulty = document.getElementById('difficulty').value;
     generatePuzzle(difficulty);
@@ -21,14 +22,12 @@ function initGame() {
 
 function generatePuzzle(difficulty) {
     let validPuzzleFound = false;
-    
     let targetClues, minDepth, maxDepth;
 
     if (difficulty === 'random') {
-        // Randomly leave between 9 and 14 clues
         targetClues = Math.floor(Math.random() * (14 - 9 + 1)) + 9; 
-        minDepth = 1;   // Allow 1-step direct elimination
-        maxDepth = 999; // Allow 5+ step deep chains
+        minDepth = 1;   
+        maxDepth = 999; 
     } else {
         targetClues = difficulty === 'easy' ? 13 : (difficulty === 'medium' ? 11 : 9);
         minDepth = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
@@ -36,12 +35,10 @@ function generatePuzzle(difficulty) {
     }
 
     while (!validPuzzleFound) {
-        // 1. Generate full valid board
         let board = Array.from({length: SIZE}, () => Array(SIZE).fill(0));
         fillBoard(board);
         solutionBoard = JSON.parse(JSON.stringify(board));
 
-        // 2. Remove cells to hit target clue count while maintaining uniqueness
         let puzzle = JSON.parse(JSON.stringify(board));
         let cells = [];
         for (let r=0; r<SIZE; r++) for (let c=0; c<SIZE; c++) cells.push({r, c});
@@ -56,14 +53,12 @@ function generatePuzzle(difficulty) {
             if (countSolutions(JSON.parse(JSON.stringify(puzzle))) === 1) {
                 clues--;
             } else {
-                puzzle[cell.r][cell.c] = temp; // Put it back, removing it breaks uniqueness
+                puzzle[cell.r][cell.c] = temp; 
             }
         }
 
-        // 3. Simulate Human Logic to grade empty cells
         let depths = calculateDeductionDepths(JSON.parse(JSON.stringify(puzzle)));
         
-        // 4. Find valid target cells matching the difficulty depth
         let validTargets = [];
         for (let r = 0; r < SIZE; r++) {
             for (let c = 0; c < SIZE; c++) {
@@ -83,7 +78,7 @@ function generatePuzzle(difficulty) {
         }
     }
 }
-// SIMULATE HUMAN LOGIC: How many passes to solve each cell?
+
 function calculateDeductionDepths(board) {
     let depths = {};
     let pass = 1;
@@ -151,7 +146,7 @@ function countSolutions(board) {
                         board[r][c] = num;
                         count += countSolutions(board);
                         board[r][c] = 0;
-                        if (count > 1) return count; // Stop early if multiple found
+                        if (count > 1) return count;
                     }
                 }
                 return count;
@@ -198,27 +193,28 @@ function renderMCQ() {
         let btn = document.createElement('button');
         btn.classList.add('mcq-btn');
         btn.innerText = i;
-        btn.onclick = () => submitAnswer(i);
+        btn.onclick = (e) => submitAnswer(i, e.target);
         mcq.appendChild(btn);
     }
 }
 
-function submitAnswer(ans) {
+function submitAnswer(ans, btnElement) {
     if (!gameActive) return;
     let correctAns = solutionBoard[targetCell.r][targetCell.c];
     let msg = document.getElementById('status-message');
     let targetElement = document.getElementById('target-element');
 
     if (ans === correctAns) {
-        msg.innerText = "Correct! You successfully deduced the logic chain.";
-        msg.style.color = "green";
+        msg.innerText = "Correct";
+        btnElement.classList.add('correct');
         targetElement.innerText = ans;
         targetElement.classList.add('revealed-correct');
         gameActive = false;
         disableMCQ();
     } else {
-        msg.innerText = "Incorrect. Check your cross-references and try again!";
-        msg.style.color = "red";
+        msg.innerText = "Incorrect";
+        btnElement.classList.add('incorrect');
+        btnElement.disabled = true;
     }
 }
 
@@ -226,8 +222,8 @@ function showSolution() {
     gameActive = false;
     disableMCQ();
     let msg = document.getElementById('status-message');
-    msg.innerText = "Solution revealed.";
-    msg.style.color = "blue";
+    msg.innerText = "Solution";
+    msg.style.color = "var(--text-color)";
     
     let cells = document.getElementsByClassName('cell');
     let index = 0;
@@ -235,7 +231,11 @@ function showSolution() {
         for (let c = 0; c < SIZE; c++) {
             if (currentBoard[r][c] === 0) {
                 cells[index].innerText = solutionBoard[r][c];
-                cells[index].classList.add('revealed-solution');
+                if (r === targetCell.r && c === targetCell.c) {
+                    cells[index].classList.add('revealed-target-solution');
+                } else {
+                    cells[index].classList.add('revealed-solution');
+                }
             }
             index++;
         }
@@ -246,5 +246,4 @@ function disableMCQ() {
     document.querySelectorAll('.mcq-btn').forEach(btn => btn.disabled = true);
 }
 
-// Start first game on load
 initGame();
